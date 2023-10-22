@@ -4,6 +4,7 @@
     "character_id": ""
   },
   "game": {
-    "message_bind_key": "p"
+    "message_bind_key": "p",
+    "username": ""
   }
 }

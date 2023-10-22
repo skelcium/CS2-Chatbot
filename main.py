@@ -49,26 +49,33 @@ last_log = ''
 
 while True:
     log = read_n_to_last_line(log_dir)
-    if log != last_log and " : " in log and 'not skel' not in log:
-        last_log = log
-        message = log.split(' : ')[1]
+    if log == last_log or " : " not in log:
+        continue
 
-        data = cai_client.chat.send_message(
-            history_id, text=message, tgt=tgt
-        )
+    data = log.split(' : ')
 
-        try:
-            name = data['src_char']['participant']['name']
-            text = data['replies'][0]['text'].replace('\n', ' ').replace('"', "''")
-        except:
-            text = "**Message filtered**"
+    if settings['game']['username'] in data[0]:
+        continue
 
-        # Chunk our message in order to send everything
-        texts = [text[i:i+chat_char_limit] for i in range(0, len(text), chat_char_limit)]
+    last_log = log
+    message = data[1]
 
-        for text in texts:
-            with open(exec_dir, 'w', encoding='utf-8') as f:
-                f.write(f'say "{text}"')
+    data = cai_client.chat.send_message(
+        history_id, text=message, tgt=tgt
+    )
 
-            pydirectinput.write(settings['game']['message_bind_key'])
-            time.sleep(chat_delay)
+    try:
+        name = data['src_char']['participant']['name']
+        text = data['replies'][0]['text'].replace('\n', ' ').replace('"', "''")
+    except:
+        text = "**Message filtered**"
+
+    # Chunk our message in order to send everything
+    texts = [text[i:i+chat_char_limit] for i in range(0, len(text), chat_char_limit)]
+
+    for text in texts:
+        with open(exec_dir, 'w', encoding='utf-8') as f:
+            f.write(f'say "{text}"')
+
+        pydirectinput.write(settings['game']['message_bind_key'])
+        time.sleep(chat_delay)

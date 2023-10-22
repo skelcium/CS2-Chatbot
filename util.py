@@ -3,6 +3,7 @@ import winreg
 import os
 import time
 
+
 def get_steam_path():
     try:
         hKey = None
@@ -16,6 +17,7 @@ def get_steam_path():
         return str(path[0])
     except:
         return None
+
 
 def read_n_to_last_line(filename, n = 1):
     """Returns the nth before last line of a file (n=1 gives last line)"""
@@ -31,6 +33,7 @@ def read_n_to_last_line(filename, n = 1):
             f.seek(0)
         last_line = f.readline().decode('utf-8', 'ignore')
     return last_line
+
 
 def log_and_exit(message):
     print(message)
