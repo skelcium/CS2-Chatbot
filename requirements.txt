@@ -1,0 +1,2 @@
+PyDirectInput~=1.0.4
+characterai~=0.8.0
