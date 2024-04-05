@@ -1,7 +1,6 @@
 import struct
 import winreg
-import time
-
+from ctypes import windll, create_unicode_buffer
 
 def get_steam_path():
     try:
@@ -37,7 +36,14 @@ def get_last_chat(log_dir, n=10):
             return line
 
 
-def log_and_exit(message):
-    print(message)
-    time.sleep(5)
-    exit()
+def get_window():
+    hWnd = windll.user32.GetForegroundWindow()
+    length = windll.user32.GetWindowTextLengthW(hWnd)
+    buf = create_unicode_buffer(length + 1)
+    windll.user32.GetWindowTextW(hWnd, buf, length + 1)
+
+    # 1-liner alternative: return buf.value if buf.value else None
+    if buf.value:
+        return buf.value
+    else:
+        return None
