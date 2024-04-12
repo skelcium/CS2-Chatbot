@@ -9,4 +9,7 @@ Automatically respond to in-game messages
 2. In CS2, run `bind p "exec message.cfg"`
 
 ## Requirements
-- A [character.ai](https://c.ai/) account in order to fetch an API key
+- An [old.character.ai](https://old.character.ai/) account in order to fetch an API key
+
+## I can't find my API key
+Log into [old.character.ai](https://old.character.ai/), open your browser's developer console, enter `console.log(JSON.parse(localStorage.getItem("char_token")).value)` and copy the result
