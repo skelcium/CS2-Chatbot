@@ -2,15 +2,25 @@ import struct
 import winreg
 from ctypes import windll, create_unicode_buffer
 
+
 def get_steam_path():
     try:
-        hKey = None
         if (8 * struct.calcsize("P")) == 64:
-            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432Node\\Valve\\Steam')
+            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE/Wow6432Node/Valve/Steam')
         else:
-            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Valve\\Steam')
+            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE/Valve/Steam')
 
         path = winreg.QueryValueEx(hKey, "InstallPath")
+        winreg.CloseKey(hKey)
+        return str(path[0])
+    except:
+        return None
+
+
+def get_game_path():
+    try:
+        hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE/WOW6432Node/Valve/cs2')
+        path = winreg.QueryValueEx(hKey, "installpath")
         winreg.CloseKey(hKey)
         return str(path[0])
     except:

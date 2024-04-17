@@ -21,7 +21,7 @@ tgt = None
 chat = None
 
 # Game
-cs_path = get_steam_path() + '\\steamapps\\common\\Counter-Strike Global Offensive\\game\\csgo\\'
+cs_path = get_game_path() + '\\game\\csgo\\'
 log_dir = cs_path + 'console.log'
 exec_dir = cs_path + 'cfg\\message.cfg'
 
@@ -187,7 +187,7 @@ async def search(recent_only=False):
                         with ui.row().classes('absolute right-2 top-1'):
                             if 'upvotes' not in character:
                                 character["upvotes"] = '0'
-                            ui.label(f'⭐{character["upvotes"]}').classes('text-subtitle2 text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]')
+                            ui.label(f'⭐{character["upvotes"]}').classes('text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]')
                         with ui.card_section().classes('h-6 w-full font-bold'):
                             ui.label(name).classes('drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]')
 
@@ -279,4 +279,4 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
                             """
 
 
-ui.run(show=False, window_size=(820, 600), title='CS2 Chatbot')
+ui.run(native=True, show=False, window_size=(820, 600), title='CS2 Chatbot', reload=False)
