@@ -1,4 +1,4 @@
-characterai~=0.8.0
 PyDirectInput~=1.0.4
 nicegui~=1.4.19
-requests~=2.31.0
+characterai~=0.8.0
+numerize~=0.12
