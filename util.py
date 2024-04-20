@@ -6,9 +6,9 @@ from ctypes import windll, create_unicode_buffer
 def get_steam_path():
     try:
         if (8 * struct.calcsize("P")) == 64:
-            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE/Wow6432Node/Valve/Steam')
+            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432Node\\Valve\\Steam')
         else:
-            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE/Valve/Steam')
+            hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Valve\\Steam')
 
         path = winreg.QueryValueEx(hKey, "InstallPath")
         winreg.CloseKey(hKey)
@@ -19,7 +19,7 @@ def get_steam_path():
 
 def get_game_path():
     try:
-        hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE/WOW6432Node/Valve/cs2')
+        hKey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\WOW6432Node\\Valve\\cs2')
         path = winreg.QueryValueEx(hKey, "installpath")
         winreg.CloseKey(hKey)
         return str(path[0])
@@ -29,7 +29,7 @@ def get_game_path():
 
 def get_last_game_name_used():
     try:
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Valve\Steam')
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Software\\Valve\\Steam')
         name, _ = winreg.QueryValueEx(key, 'LastGameNameUsed')
         return name
     except:
