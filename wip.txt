@@ -1,0 +1,3 @@
+- Change reading log file to how it is done here: http://www.dabeaz.com/generators/Generators.pdf (pg. 72).
+    - More efficient than parsing entire log file every call.
+    - Check if it works within an async function, may need dedicated thread with shared queue (pg. 89).

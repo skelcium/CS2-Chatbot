@@ -24,7 +24,7 @@ tgt = None
 chat = None
 
 # Game
-cs_path = get_game_path() + '\\game\\csgo\\'
+cs_path = get_cs_path() + '\\game\\csgo\\'
 log_dir = cs_path + 'console.log'
 exec_dir = cs_path + 'cfg\\message.cfg'
 bind_key = 'p'
@@ -82,7 +82,7 @@ async def handle_chat():
         data = log.split(': ')
 
         # Don't respond to self
-        if get_last_game_name_used() in data[0]:
+        if get_last_name_used() in data[0]:
             return
 
         last_log = log
@@ -114,7 +114,7 @@ async def handle_chat():
                 f.write(f'say "{text}"')
 
             # Don't send an input to other windows
-            if get_window() == 'Counter-Strike 2':
+            if get_foreground_window_title() == 'Counter-Strike 2':
                 if human_mode_switch.value:
                     await asyncio.sleep(each_key_delay * len(text))
 
