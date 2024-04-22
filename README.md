@@ -7,6 +7,8 @@ Automatically respond to in-game messages
 ## Setup
 1. Add `-condebug` to your CS2 launch options
 2. In CS2, run `bind p "exec message.cfg"`
+   
+**Note:** Automatically replying will require you to run the application with admin privileges, otherwise you'll have to manually use the bind.
 
 ## Requirements
 - An [old.character.ai](https://old.character.ai/) account in order to fetch an API key
