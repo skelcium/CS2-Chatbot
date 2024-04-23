@@ -180,15 +180,21 @@ def select_character(char):
 async def set_token(token, overwrite=False):
     global client
 
-    if overwrite:
-        with open(settings_file, 'w') as f:
-            json.dump({'token': token}, f)
-
     # we should validate whether the token is correct in the future
     client = PyCAI(token)
-    ui.notify('Token updated')
+    username = client.user.info()['user']['user']['username']
 
-    await search(query_type='Trending')
+    if username == 'ANONYMOUS':
+        ui.notify('An invalid token has been set!', type='negative')
+    else:
+        ui.notify(f'Welcome {username}!', type='positive')
+
+        # Save correct token
+        if overwrite:
+            with open(settings_file, 'w') as f:
+                json.dump({'token': token}, f)
+
+        await search(query_type='Trending')
 
 
 async def search(query_type='Search'):
@@ -224,7 +230,7 @@ async def search(query_type='Search'):
                 avatar = 'https://characterai.io/i/80/static/topic-pics/cai-light-on-dark.jpg'
 
             with results:
-                with ui.link().on('click', lambda char=character: select_character(char)).classes('no-underline hover:scale-105 duration-100 active:scale-100'):
+                with ui.link().on('click', lambda char=character: select_character(char)).classes('no-underline hover:scale-105 duration-100 active:scale-100 text-pink-600'):
                     with ui.card().tight().classes('w-36 h-48 text-center').classes('shadow-md shadow-black dark:bg-[#121212]'):
                         ui.image(avatar).classes('w-36 h-32')
                         with ui.row().classes('absolute right-2 top-1'):
@@ -293,7 +299,7 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
                 with ui.row().classes('flex items-center w-full'):
                     character_input = ui.input('Character').on('keypress.enter', search)
                     search_btn = ui.button(on_click=search, icon='search').classes('outline mt-auto')
-                    select = ui.select(['Recommended', 'Trending', 'Recent'], value='Trending', on_change=lambda e: search(query_type=e.value)).classes('ml-auto')
+                    select = ui.select(['Recommended', 'Trending', 'Recent'], value='Trending', on_change=lambda e: search(query_type=e.value)).classes('ml-auto').props('filled')
 
                 ui.separator()
                 results = ui.row().classes('flex justify-center')
@@ -334,4 +340,4 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
 
 load_settings()
 
-ui.run(native=True, show=False, window_size=(840, 600), title='CS2 Chatbot')
+ui.run(native=True, show=False, window_size=(840, 600), title='CS2 Chatbot', reload=False)
