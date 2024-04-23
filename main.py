@@ -180,7 +180,6 @@ def select_character(char):
 async def set_token(token, overwrite=False):
     global client
 
-    # we should validate whether the token is correct in the future
     client = PyCAI(token)
     username = client.user.info()['user']['user']['username']
 
