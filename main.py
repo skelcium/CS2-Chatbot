@@ -12,7 +12,7 @@ theme = ui.dark_mode()
 theme.enable()
 
 ui.query('.nicegui-content').classes('p-0')
-ui.colors(primary='#ec4899', secondary='#ec4899')
+ui.colors(primary='#ec4899')
 
 # c.ai vars
 settings_file = 'chatbot_settings.json'
@@ -52,12 +52,13 @@ class ToggleButton(ui.button):
             tabs.set_value('Settings')
             self._state = not self._state
         elif not current_char:
-            ui.notify('Please select a character to use!', type='negative')
+            ui.notify('Please select a character to use first!', type='negative')
             tabs.set_value('Characters')
             self._state = not self._state
         elif self._state:
             ui.notify('Chatbot is now running!', type='positive', color='pink')
             toggle_active.classes(remove='animate-pulse')
+            status_badge.set_visibility(False)
             cai_token.disable()
         else:
             ui.notify('Chatbot has been disabled.', type='warning')
@@ -96,15 +97,18 @@ async def handle_chat():
                 else:
                     response_message += char.lower()
 
-            text = response_message.replace('\n', ' ').replace('"', "''").replace(';', '')
+            response_message = response_message
 
         else:
-            data = client.chat.send_message(
+            data = await run.cpu_bound(client.chat.send_message,
                 chat['external_id'], tgt, message
             )
 
             #name = data['src_char']['participant']['name']
-            text = data['replies'][0]['text'].replace('\n', ' ').replace('"', "''").replace(';', '')
+            response_message = data['replies'][0]['text']
+
+        # Clean string
+        text = response_message.replace('"', "''").replace('\n', ' ')
 
         # Chunk our message in order to send everything
         texts = [text[i:i + chat_char_limit] for i in range(0, len(text), chat_char_limit)]
@@ -136,6 +140,11 @@ def load_settings():
             if settings['token']:
                 cai_token.value = settings['token']
     except FileNotFoundError:
+        print('No settings file, creating one.')
+        with open(settings_file, 'w') as f:
+            json.dump({'token': ''}, f)
+    except json.JSONDecodeError:
+        print('Invalid JSON data, recreating file.')
         with open(settings_file, 'w') as f:
             json.dump({'token': ''}, f)
 
@@ -159,7 +168,12 @@ def select_character(char):
     reset_button.enable()
     current_char = char
 
-    ui.notify('Selected: ' + char['participant__name'])
+    if char['avatar_file_name']:
+        avatar = 'https://characterai.io/i/80/static/avatars/' + char['avatar_file_name']
+    else:
+        avatar = 'https://characterai.io/i/80/static/topic-pics/cai-light-on-dark.jpg'
+
+    ui.notify(f'Selected {char["participant__name"]} as your character.', avatar=avatar, color='pink')
     char_id = char['external_id']
 
     # Save tgt and history_external_id
@@ -286,6 +300,8 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
 
         with ui.row().classes('p-2 mx-auto'):
             toggle_active = ToggleButton(icon='power_settings_new').classes('bg-pink-600 w-11 animate-pulse')
+            with toggle_active:
+                status_badge = ui.badge('OFF').props('floating').classes('bg-red rounded')
             reset_button = ui.button(icon='restart_alt').classes('bg-pink-600 w-11 outline').on('click',lambda e: select_character(current_char))
             reset_button.disable()
 
