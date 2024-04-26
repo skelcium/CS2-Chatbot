@@ -1,14 +1,12 @@
 ## CS2-Chatbot
-Automatically respond to in-game messages
+Automatically respond to in-game messages in Counter-Strike 2
 
-![image](https://github.com/skelcium/CS2-Chatbot/assets/141345390/1a35dba3-e5b5-4408-a73f-523ad6bdac5e)
+![image](https://github.com/skelcium/CS2-Chatbot/assets/141345390/aaaea781-60a2-4fcb-881b-178f3c0b621d)
 ![image](https://github.com/skel-sys/CS2-Chatbot/assets/141345390/9b8a3948-cf43-4960-a786-b87e83be4abb)
 
 ## Setup
 1. Add `-condebug` to your CS2 launch options
 2. In CS2, run `bind p "exec message.cfg"`
-   
-**Note:** Automatically replying will require you to run the application with admin privileges, otherwise you'll have to manually use the bind.
 
 ## Requirements
 - An [old.character.ai](https://old.character.ai/) account in order to fetch an API key
