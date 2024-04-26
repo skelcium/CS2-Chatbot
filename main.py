@@ -7,6 +7,9 @@ from util import *
 from numerize import numerize
 import random
 import json
+import requests
+
+current_version = 'v1.2.0'
 
 theme = ui.dark_mode()
 theme.enable()
@@ -149,6 +152,14 @@ def load_settings():
             json.dump({'token': ''}, f)
 
 
+def check_if_updated():
+    data = requests.get('https://api.github.com/repositories/708269905/releases').json()
+    recent_tag = data[0]['tag_name']
+
+    if recent_tag != current_version:
+        ui.notify('A new update is available, click <a style="color: #ec4899" href="https://github.com/skelcium/CS2-Chatbot/releases" target="_blank">here</a> download it.', html=True, close_button='Close', timeout=20000)
+
+
 def select_character(char):
     if not client:
         ui.notify('Please set a C.AI token!', type='negative')
@@ -173,7 +184,7 @@ def select_character(char):
     else:
         avatar = 'https://characterai.io/i/80/static/topic-pics/cai-light-on-dark.jpg'
 
-    ui.notify(f'Selected {char["participant__name"]} as your character.', avatar=avatar, color='pink')
+    ui.notify(f'Selected <b>{char["participant__name"]}</b> as your character.', avatar=avatar, color='pink', html=True)
     char_id = char['external_id']
 
     # Save tgt and history_external_id
@@ -200,7 +211,7 @@ async def set_token(token, overwrite=False):
     if username == 'ANONYMOUS':
         ui.notify('An invalid token has been set!', type='negative')
     else:
-        ui.notify(f'Welcome {username}!', type='positive')
+        ui.notify(f'Welcome {username}!', type='positive', color='pink')
 
         # Save correct token
         if overwrite:
@@ -256,7 +267,8 @@ async def search(query_type='Search'):
                         with ui.card_section().classes('h-6 w-full font-bold'):
                             ui.label(name).classes('drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]')
 
-        ui.notify(f'Found {len(characters)} top results!', type='positive', color='pink')
+        character_count_badge.text = len(characters)
+        #ui.notify(f'Found {len(characters)} top results!', type='positive', color='pink')
 
     except Exception as e:
         ui.notify(traceback.format_exc())
@@ -296,6 +308,8 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
         ui.icon('chat', color='#ec4899').classes('m-auto text-5xl mt-6')
         with ui.tabs().props('vertical').classes('w-full h-full') as tabs:
             characters = ui.tab('Characters', icon='group')
+            with characters:
+                character_count_badge = ui.badge('0', color='#ec4899').classes('absolute mr-3')
             settings = ui.tab('Settings', icon='settings')
 
         with ui.row().classes('p-2 mx-auto'):
@@ -353,6 +367,7 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
                             with mimic_mode_switch:
                                 ui.tooltip('Repeat messages with randomly applied capitalization, JuSt LikE ThiS!')
 
+check_if_updated()
 load_settings()
 
 ui.run(native=True, show=False, window_size=(840, 600), title='CS2 Chatbot', reload=False)
