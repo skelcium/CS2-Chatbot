@@ -93,15 +93,7 @@ async def handle_chat():
         message = data[1]
 
         if mimic_mode_switch.value:
-            response_message = ''
-            for char in message:
-                if random.randint(0, 1):
-                    response_message += char.upper()
-                else:
-                    response_message += char.lower()
-
-            response_message = response_message
-
+            response_message = ''.join([char.upper() if random.randint(0, 1) else char.lower() for char in message])
         else:
             data = await run.cpu_bound(client.chat.send_message,
                 chat['external_id'], tgt, message
