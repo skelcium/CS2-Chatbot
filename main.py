@@ -151,6 +151,15 @@ def check_if_updated():
     if recent_tag != current_version:
         ui.notify('A new update is available, click <a style="color: #ec4899" href="https://github.com/skelcium/CS2-Chatbot/releases" target="_blank">here</a> download it.', html=True, close_button='Close', timeout=20000)
 
+def check_if_admin():
+    if not is_running_as_admin():
+        ui.notify('Not running as admin, some features may not work.', html=True, close_button='Close', timeout=20000)
+
+
+def check_if_condebug():
+    if not is_condebug_in_steam_args():
+        ui.notify('Could not find -condebug in Steam CS2 launch arguments.', html=True, close_button='Close', timeout=20000)
+
 
 def select_character(char):
     if not client:
@@ -360,6 +369,8 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
                                 ui.tooltip('Repeat messages with randomly applied capitalization, JuSt LikE ThiS!')
 
 check_if_updated()
+check_if_admin()
+check_if_condebug()
 load_settings()
 
 ui.run(native=True, show=False, window_size=(840, 600), title='CS2 Chatbot', reload=False)
