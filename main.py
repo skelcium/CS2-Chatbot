@@ -145,20 +145,23 @@ def load_settings():
 
 
 def check_if_updated():
-    data = requests.get('https://api.github.com/repositories/708269905/releases').json()
-    recent_tag = data[0]['tag_name']
+    try:
+        data = requests.get('https://api.github.com/repositories/708269905/releases').json()
+        recent_tag = data[0]['tag_name']
 
-    if recent_tag != current_version:
-        ui.notify('A new update is available, click <a style="color: #ec4899" href="https://github.com/skelcium/CS2-Chatbot/releases" target="_blank">here</a> download it.', html=True, close_button='Close', timeout=20000)
+        if recent_tag != current_version:
+            ui.notify('A new update is available, click <a style="color: #ec4899" href="https://github.com/skelcium/CS2-Chatbot/releases" target="_blank">here</a> to download it.', html=True, close_button='Close', timeout=20000)
+    except:
+        ui.notify("Failed to check if up-to-date.")
 
 def check_if_admin():
     if not is_running_as_admin():
-        ui.notify('Not running as admin, some features may not work.', html=True, close_button='Close', timeout=20000)
+        ui.notify('Not running as admin, some features <b>may not work</b>.', html=True, close_button='Close', timeout=0, type='warning')
 
 
 def check_if_condebug():
     if not is_condebug_in_steam_args():
-        ui.notify('Could not find -condebug in Steam CS2 launch arguments.', html=True, close_button='Close', timeout=20000)
+        ui.notify('Could not find <b>-condebug</b> in Steam CS2 launch arguments.', html=True, close_button='Close', timeout=0, type='warning')
 
 
 def select_character(char):
@@ -327,9 +330,9 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
         with ui.tab_panels(tabs, value=characters).props('vertical').classes('w-full h-full'):
             with ui.tab_panel(characters).classes('overflow-x-hidden'):
                 with ui.row().classes('flex items-center w-full'):
-                    character_input = ui.input('Character').on('keypress.enter', search)
+                    character_input = ui.input('Character').on('keypress.enter', search).classes('w-52')
                     search_btn = ui.button(on_click=search, icon='search').classes('outline mt-auto')
-                    select = ui.select(['Recommended', 'Trending', 'Recent'], value='Trending', on_change=lambda e: search(query_type=e.value)).classes('ml-auto').props('filled')
+                    character_select = ui.select(['Recommended', 'Trending', 'Recent'], value='Trending', on_change=lambda e: search(query_type=e.value)).classes('ml-auto').props('filled')
 
                 ui.separator()
                 results = ui.row().classes('flex justify-center')
@@ -373,4 +376,4 @@ check_if_admin()
 check_if_condebug()
 load_settings()
 
-ui.run(native=True, show=False, window_size=(840, 600), title='CS2 Chatbot', reload=False)
+ui.run(native=True, show=False, window_size=(840, 600), title='CS2 Chatbot', reload=False, show_welcome_message=False)

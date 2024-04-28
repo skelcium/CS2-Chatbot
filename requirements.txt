@@ -1,4 +1,6 @@
 PyDirectInput~=1.0.4
+requests~=2.31.0
 nicegui~=1.4.19
 characterai~=0.8.0
 numerize~=0.12
+vdf~=3.4
