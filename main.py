@@ -275,7 +275,8 @@ async def search(query_type='Search'):
         #ui.notify(f'Found {len(characters)} top results!', type='positive', color='pink')
 
     except Exception as e:
-        ui.notify(traceback.format_exc())
+        traceback_msg = traceback.format_exc()
+        ui.notify(traceback_msg)
         search_btn.enable()
 
     search_btn.enable()
@@ -309,18 +310,18 @@ with ui.dialog() as dialog_wipe, ui.card():
 
 with ui.splitter(value=16).classes('w-full h-screen') as splitter:
     with splitter.before:
-        ui.icon('chat', color='#ec4899').classes('m-auto text-5xl mt-6')
+        ui.icon('chat', color='primary').classes('m-auto text-5xl mt-6')
         with ui.tabs().props('vertical').classes('w-full h-full') as tabs:
             characters = ui.tab('Characters', icon='group')
             with characters:
-                character_count_badge = ui.badge('0', color='#ec4899').classes('absolute mr-3')
+                character_count_badge = ui.badge('0').classes('absolute mr-3')
             settings = ui.tab('Settings', icon='settings')
 
         with ui.row().classes('p-2 mx-auto'):
-            toggle_active = ToggleButton(icon='power_settings_new').classes('bg-pink-600 w-11 animate-pulse')
+            toggle_active = ToggleButton(icon='power_settings_new').classes('w-11 animate-pulse')
             with toggle_active:
                 status_badge = ui.badge('OFF').props('floating').classes('bg-red rounded')
-            reset_button = ui.button(icon='restart_alt').classes('bg-pink-600 w-11 outline').on('click',lambda e: select_character(current_char))
+            reset_button = ui.button(icon='restart_alt').classes('w-11 outline').on('click',lambda e: select_character(current_char))
             reset_button.disable()
 
             with reset_button:
@@ -347,7 +348,7 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
                 with ui.grid(columns=2).classes('w-full'):
                     with ui.card().tight().classes('shadow-sm shadow-black'):
                         with ui.card_section():
-                            ui.badge('API ', color='#ec4899')
+                            ui.badge('API')
                             cai_token = ui.input(label='C.AI Token', password=True, on_change=lambda e: set_token(e.value, overwrite=True))
 
                             with ui.row().classes('mt-5'):
@@ -355,14 +356,18 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
 
                     with ui.card().tight().classes('shadow-sm shadow-black'):
                         with ui.card_section():
-                            ui.badge('Appearance', color='#ec4899')
+                            ui.badge('Appearance')
                             ui.html('<br>')
 
                             ui.switch('Dark Theme', on_change=swap_theme, value=True)
 
+                            with ui.row().classes('mt-3') :
+                                with ui.button(icon='colorize').props('rounded') as button:
+                                    ui.color_picker(on_pick=lambda e: ui.colors(primary=e.color))
+
                     with ui.card().tight().classes('shadow-sm shadow-black'):
                         with ui.card_section().classes('w-full'):
-                            ui.badge('Chatbot', color='#ec4899')
+                            ui.badge('Chatbot')
                             ui.html('<br>')
 
                             mimic_mode_switch = ui.switch('Mimic Mode')
