@@ -1,6 +1,7 @@
 import os, vdf, winreg
 from ctypes import wintypes, windll, create_unicode_buffer, byref, POINTER, sizeof
 
+# Scary handle technology (doesn't touch the game though, trust).
 windll.advapi32.OpenProcessToken.restype = wintypes.BOOL
 windll.advapi32.OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD, POINTER(wintypes.HANDLE)]
 

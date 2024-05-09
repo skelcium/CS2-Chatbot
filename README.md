@@ -13,3 +13,6 @@ Automatically respond to in-game messages in Counter-Strike 2
 
 ## I can't find my API key
 Log into [old.character.ai](https://old.character.ai/), open your browser's developer console, enter `console.log(JSON.parse(localStorage.getItem("char_token")).value)` and copy the result
+
+## Can I be banned for this?
+No
