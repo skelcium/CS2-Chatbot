@@ -1,13 +1,16 @@
 import asyncio
-import pydirectinput
-import traceback
-from nicegui import ui, run
-from characterai import PyCAI
-from util import *
-from numerize import numerize
-import random
 import json
+import random
+import traceback
+
+import pydirectinput
 import requests
+from characterai import PyCAI
+from nicegui import ui, run
+from numerize import numerize
+
+from util import *
+
 
 current_version = 'v1.2.0'
 
@@ -272,7 +275,6 @@ async def search(query_type='Search'):
                             ui.label(name).classes('drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]')
 
         character_count_badge.text = len(characters)
-        #ui.notify(f'Found {len(characters)} top results!', type='positive', color='pink')
 
     except Exception as e:
         traceback_msg = traceback.format_exc()
@@ -297,18 +299,7 @@ with ui.dialog() as dialog_help_api, ui.card():
 
     ui.button('Close', on_click=dialog_help_api.close).props('outline')
 
-with ui.dialog() as dialog_wipe, ui.card():
-    ui.markdown('''
-    ## Wipe History
-
-    Are you sure you'd like to wipe {current character's} chat history/memory? This cannot be undone.
-    ''')
-
-    with ui.row():
-        ui.button('Yes', on_click=dialog_wipe.close)
-        ui.button('Close', on_click=dialog_wipe.close).props('outline')
-
-with ui.splitter(value=16).classes('w-full h-screen') as splitter:
+with ui.splitter(value=16).classes('w-full h-screen').props(':limits="[16, 32]"') as splitter:
     with splitter.before:
         ui.icon('chat', color='primary').classes('m-auto text-5xl mt-6')
         with ui.tabs().props('vertical').classes('w-full h-full') as tabs:
@@ -336,7 +327,7 @@ with ui.splitter(value=16).classes('w-full h-screen') as splitter:
                     character_select = ui.select(['Recommended', 'Trending', 'Recent'], value='Trending', on_change=lambda e: search(query_type=e.value)).classes('ml-auto').props('filled')
 
                 ui.separator()
-                results = ui.row().classes('flex justify-center')
+                results = ui.row().classes('justify-center')
                 with results:
                     ui.chat_message("Hello, recommended characters will be displayed here once you've set a C.AI token.",
                                     name='Skel',
