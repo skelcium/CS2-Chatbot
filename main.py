@@ -263,7 +263,7 @@ async def search(query_type='Search'):
             with results:
                 with ui.link().on('click', lambda char=character: select_character(char)).classes('no-underline hover:scale-105 duration-100 active:scale-100 text-pink-600'):
                     with ui.card().tight().classes('w-36 h-48 text-center').classes('shadow-md shadow-black dark:bg-[#121212]'):
-                        ui.image(avatar).classes('w-36 h-32')
+                        ui.image(avatar).classes('h-32')
                         with ui.row().classes('absolute right-2 top-1'):
                             if 'participant__num_interactions' in character:
                                 interaction_label = f'🗨️{numerize.numerize(character["participant__num_interactions"])}'
@@ -272,7 +272,7 @@ async def search(query_type='Search'):
 
                             ui.label(interaction_label).classes('text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1)]')
                         with ui.card_section().classes('h-6 w-full font-bold'):
-                            ui.label(name).classes('drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]')
+                            ui.label(name).classes('drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] break-words')
 
         character_count_badge.text = len(characters)
 
@@ -357,7 +357,7 @@ with ui.splitter(value=16).classes('w-full h-screen').props(':limits="[16, 32]"'
                                     ui.color_picker(on_pick=lambda e: ui.colors(primary=e.color))
 
                     with ui.card().tight().classes('shadow-sm shadow-black'):
-                        with ui.card_section().classes('w-full'):
+                        with ui.card_section():
                             ui.badge('Chatbot')
                             ui.html('<br>')
 
