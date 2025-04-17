@@ -1,3 +1,6 @@
+## ⚠️ Outdated
+This project is currently unmaintained
+
 ## CS2-Chatbot
 Automatically respond to in-game messages in Counter-Strike 2
 
