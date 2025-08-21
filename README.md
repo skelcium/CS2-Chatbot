@@ -25,6 +25,18 @@ Automatically respond to in-game messages in Counter-Strike 2
 7. Copy the value after "Token " (the long string of letters and numbers)
 8. That's your API token!
 
+## Building from Source (Windows Only)
+
+This application is designed for Windows and requires PowerShell to build:
+
+1. Clone the repository
+2. Create a virtual environment: `python -m venv venv`
+3. Activate it: `.\venv\Scripts\Activate.ps1`
+4. Install dependencies: `pip install -r requirements.txt`
+5. Build executable: `powershell -ExecutionPolicy Bypass -File .\build.ps1`
+
+The built executable will be in the `release` folder.
+
 ## Can I be banned for this?
 
 No

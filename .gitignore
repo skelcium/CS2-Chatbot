@@ -218,4 +218,11 @@ cs2_chatbot_debug.log
 __pycache__/
 chatbot_settings.json
 
+# PyInstaller build artifacts
+*.spec
+!CS2-Chatbot.spec  # Keep our build spec file - it's required for proper dependency inclusion
+release/
+test_*.py
+*.bat  # Exclude batch files - we use PowerShell only
+
 # End of https://www.toptal.com/developers/gitignore/api/python,virtualenv,windows
