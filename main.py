@@ -57,7 +57,7 @@ logger.info("=== CS2-Chatbot Starting with Debug Logging ===")
 logger.info("Logging initialized - messages will appear in both GUI and terminal")
 
 
-current_version = 'v1.2.0'
+current_version = 'v1.3.0'
 
 theme = ui.dark_mode()
 theme.enable()
