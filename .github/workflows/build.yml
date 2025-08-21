@@ -1,64 +1,124 @@
-name: Build CS2-Chatbot Executable
+name: Build and Release
 
 on:
-  workflow_dispatch:  # Manual trigger only for testing
+  push:
+    tags:
+      - "v*" # Trigger on version tags (v1.0.0, v2.1.3, etc.)
+  workflow_dispatch: # Keep manual trigger for testing
+
+env:
+  PYTHON_VERSION: "3.13" # Specify Python version here
 
 jobs:
   build:
+    name: Build CS2-Chatbot Executable
     runs-on: windows-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
-        
-    - name: Create virtual environment
-      run: |
-        python -m venv venv
-        
-    - name: Install dependencies
-      run: |
-        .\venv\Scripts\Activate.ps1
-        pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Build executable
-      run: |
-        .\venv\Scripts\Activate.ps1
-        powershell -ExecutionPolicy Bypass -File .\build.ps1
-        
-    - name: Verify build output
-      run: |
-        if (Test-Path ".\release\CS2-Chatbot.exe") {
-          $fileInfo = Get-Item ".\release\CS2-Chatbot.exe"
-          $sizeInMB = [math]::Round($fileInfo.Length / 1MB, 1)
-          Write-Host "✅ Build successful!"
-          Write-Host "📁 Executable: CS2-Chatbot.exe"
-          Write-Host "📊 Size: $sizeInMB MB"
-          Write-Host "📅 Built: $($fileInfo.LastWriteTime)"
-        } else {
-          Write-Host "❌ Build failed - executable not found"
-          exit 1
-        }
-        
-    - name: Upload executable artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: CS2-Chatbot-Windows-${{ github.sha }}
-        path: release/
-        retention-days: 30
-        compression-level: 6
-        
-    - name: Upload build logs (if build fails)
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs-${{ github.sha }}
-        path: |
-          build/
-          *.log
-        retention-days: 7
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for changelog generation
+
+      - name: Extract version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        id: version
+        run: |
+          $tagName = "${{ github.ref }}" -replace 'refs/tags/', ''
+          echo "tag=$tagName" >> $env:GITHUB_OUTPUT
+          echo "version=$($tagName -replace '^v', '')" >> $env:GITHUB_OUTPUT
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Create virtual environment
+        run: |
+          python -m venv venv
+
+      - name: Install dependencies
+        run: |
+          .\venv\Scripts\Activate.ps1
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build executable
+        run: |
+          .\venv\Scripts\Activate.ps1
+          powershell -ExecutionPolicy Bypass -File .\build.ps1
+
+      - name: Verify build output
+        run: |
+          if (Test-Path ".\release\CS2-Chatbot.exe") {
+            $fileInfo = Get-Item ".\release\CS2-Chatbot.exe"
+            $sizeInMB = [math]::Round($fileInfo.Length / 1MB, 1)
+            Write-Host "✅ Build successful!"
+            Write-Host "📁 Executable: CS2-Chatbot.exe"
+            Write-Host "📊 Size: $sizeInMB MB"
+            Write-Host "📅 Built: $($fileInfo.LastWriteTime)"
+          } else {
+            Write-Host "❌ Build failed - executable not found"
+            exit 1
+          }
+
+      - name: Generate changelog
+        if: startsWith(github.ref, 'refs/tags/')
+        id: changelog
+        run: |
+          # Get the previous tag
+          $previousTag = git describe --tags --abbrev=0 HEAD~1 2>$null
+
+          if ($previousTag) {
+            echo "📋 Generating changelog from $previousTag to ${{ steps.version.outputs.tag }}"
+            $changelog = git log --pretty=format:"- %s (%h)" "$previousTag..${{ steps.version.outputs.tag }}" --no-merges
+          } else {
+            echo "📋 No previous tag found, showing last 50 commits"
+            $changelog = git log --pretty=format:"- %s (%h)" -n 50 --no-merges
+          }
+
+          # Format changelog for GitHub release
+          $changelogFormatted = @"
+          ## What's Changed
+
+          $changelog
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$previousTag...${{ steps.version.outputs.tag }}
+          "@
+
+          # Save to file for multiline output
+          $changelogFormatted | Out-File -FilePath changelog.txt -Encoding utf8
+          echo "changelog_file=changelog.txt" >> $env:GITHUB_OUTPUT
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CS2-Chatbot-Windows-${{ steps.version.outputs.tag || github.sha }}
+          path: release/
+          retention-days: 30
+          compression-level: 6
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: CS2-Chatbot ${{ steps.version.outputs.version }}
+          body_path: changelog.txt
+          files: |
+            release/CS2-Chatbot.exe
+            release/README.md
+            release/LICENSE
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.sha }}
+          path: |
+            build/
+            *.log
+          retention-days: 7
