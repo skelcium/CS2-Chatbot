@@ -1,0 +1,64 @@
+name: Build CS2-Chatbot Executable
+
+on:
+  workflow_dispatch:  # Manual trigger only for testing
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+        
+    - name: Create virtual environment
+      run: |
+        python -m venv venv
+        
+    - name: Install dependencies
+      run: |
+        .\venv\Scripts\Activate.ps1
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Build executable
+      run: |
+        .\venv\Scripts\Activate.ps1
+        powershell -ExecutionPolicy Bypass -File .\build.ps1
+        
+    - name: Verify build output
+      run: |
+        if (Test-Path ".\release\CS2-Chatbot.exe") {
+          $fileInfo = Get-Item ".\release\CS2-Chatbot.exe"
+          $sizeInMB = [math]::Round($fileInfo.Length / 1MB, 1)
+          Write-Host "✅ Build successful!"
+          Write-Host "📁 Executable: CS2-Chatbot.exe"
+          Write-Host "📊 Size: $sizeInMB MB"
+          Write-Host "📅 Built: $($fileInfo.LastWriteTime)"
+        } else {
+          Write-Host "❌ Build failed - executable not found"
+          exit 1
+        }
+        
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CS2-Chatbot-Windows-${{ github.sha }}
+        path: release/
+        retention-days: 30
+        compression-level: 6
+        
+    - name: Upload build logs (if build fails)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs-${{ github.sha }}
+        path: |
+          build/
+          *.log
+        retention-days: 7
