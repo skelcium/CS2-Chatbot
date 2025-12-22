@@ -2,17 +2,62 @@ import asyncio
 import json
 import random
 import traceback
+import logging
 
 import pydirectinput
 import requests
-from characterai import PyCAI
+from PyCharacterAI import get_client
 from nicegui import ui, run
 from numerize import numerize
 
 from util import *
 
+# Setup comprehensive logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
+    handlers=[
+        logging.FileHandler('cs2_chatbot_debug.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-current_version = 'v1.2.0'
+# Enhanced notify function that logs to both GUI and terminal
+def notify_and_log(message, type='info', level='info', **kwargs):
+    """Show notification in GUI and log to terminal"""
+    # Map notify types to log levels
+    log_level_map = {
+        'positive': 'info',
+        'negative': 'error', 
+        'warning': 'warning',
+        'info': 'info'
+    }
+    
+    # Get the appropriate log level
+    log_level = log_level_map.get(type, level)
+    
+    # Log to terminal
+    if log_level == 'error':
+        logger.error(f"GUI Notification: {message}")
+    elif log_level == 'warning':
+        logger.warning(f"GUI Notification: {message}")
+    else:
+        logger.info(f"GUI Notification: {message}")
+    
+    # Show in GUI - ensure type is valid
+    from typing import Literal
+    valid_types = ['positive', 'negative', 'warning', 'info', 'ongoing']
+    if type in valid_types:
+        ui.notify(message, type=type, **kwargs)  # type: ignore
+    else:
+        ui.notify(message, type='info', **kwargs)
+
+logger.info("=== CS2-Chatbot Starting with Debug Logging ===")
+logger.info("Logging initialized - messages will appear in both GUI and terminal")
+
+
+current_version = 'v1.3.0'
 
 theme = ui.dark_mode()
 theme.enable()
@@ -23,11 +68,9 @@ ui.colors(primary='#ec4899')
 # c.ai vars
 settings_file = 'chatbot_settings.json'
 client = None
-char_id = None
+current_character_id = None
 current_char = None
-
-tgt = None
-chat = None
+current_chat = None
 
 # Game
 cs_path = get_cs_path() + '\\game\\csgo\\'
@@ -54,20 +97,20 @@ class ToggleButton(ui.button):
         self.update()
 
         if cai_token.value == '':
-            ui.notify('Please set a C.AI token!', type='negative')
+            notify_and_log('Please set a C.AI token!', type='negative')
             tabs.set_value('Settings')
             self._state = not self._state
         elif not current_char:
-            ui.notify('Please select a character to use first!', type='negative')
+            notify_and_log('Please select a character to use first!', type='negative')
             tabs.set_value('Characters')
             self._state = not self._state
         elif self._state:
-            ui.notify('Chatbot is now running!', type='positive', color='pink')
+            notify_and_log('Chatbot is now running!', type='positive', color='pink')
             toggle_active.classes(remove='animate-pulse')
             status_badge.set_visibility(False)
             cai_token.disable()
         else:
-            ui.notify('Chatbot has been disabled.', type='warning')
+            notify_and_log('Chatbot has been disabled.', type='warning')
             cai_token.enable()
 
         self.update()
@@ -98,12 +141,22 @@ async def handle_chat():
         if mimic_mode_switch.value:
             response_message = ''.join([char.upper() if random.randint(0, 1) else char.lower() for char in message])
         else:
-            data = await run.cpu_bound(client.chat.send_message,
-                chat['external_id'], tgt, message
-            )
-
-            #name = data['src_char']['participant']['name']
-            response_message = data['replies'][0]['text']
+            if not current_chat or not current_character_id:
+                notify_and_log('No character selected or chat not initialized!', type='negative')
+                return
+                
+            try:
+                logger.debug(f"Sending message to character {current_character_id}: {message}")
+                answer = await client.chat.send_message(
+                    current_character_id, current_chat.chat_id, message
+                )
+                response_message = answer.get_primary_candidate().text
+                logger.debug(f"Received response: {response_message}")
+            except Exception as e:
+                logger.error(f"Failed to send message to Character.AI: {str(e)}")
+                logger.error(f"Exception details: {traceback.format_exc()}")
+                notify_and_log(f'Failed to send message: {str(e)}', type='negative')
+                return
 
         # Clean string
         text = response_message.replace('"', "''").replace('\n', ' ')
@@ -167,65 +220,76 @@ def check_if_condebug():
         ui.notify('Could not find <b>-condebug</b> in Steam CS2 launch arguments.', html=True, close_button='Close', timeout=0, type='warning')
 
 
-def select_character(char):
+def select_character_sync(char):
+    """Synchronous wrapper for select_character using NiceGUI's context"""
+    # Use NiceGUI's run.io_bound to properly handle the async function
+    async def wrapper():
+        await select_character(char)
+    
+    # Use ui.timer to run the async function once
+    ui.timer(0.01, wrapper, once=True)
+
+async def select_character(char):
+    logger.debug(f"Attempting to select character: {char.name} (ID: {char.character_id})")
     if not client:
-        ui.notify('Please set a C.AI token!', type='negative')
+        notify_and_log('Please set a C.AI token!', type='negative')
         tabs.set_value('Settings')
         return
 
-    global char_id
-    global tgt
+    
+    global current_character_id
     global current_char
+    global current_chat
+
 
     try:
-        client.chat.new_chat(char_id)
-    except:
-        ui.notify('Failed to create chat, check your token!', type='negative')
+        current_character_id = char.character_id
+        current_char = char
+        
+        # Create new chat using new library
+        logger.debug(f"Creating chat for character {char.character_id}")
+        current_chat, _ = await client.chat.create_chat(current_character_id)
+        logger.debug(f"Chat created successfully: {current_chat.chat_id}")
+        
+        reset_button.enable()
+
+        if hasattr(char, 'avatar') and char.avatar:
+            avatar = char.avatar.get_url()
+        else:
+            avatar = 'https://characterai.io/i/80/static/topic-pics/cai-light-on-dark.jpg'
+
+        notify_and_log(f'Selected <b>{char.name}</b> as your character.', type='positive', avatar=avatar, color='pink', html=True)
+        
+    except Exception as e:
+        logger.error(f"Failed to create chat for character {char.name}: {str(e)}")
+        logger.error(f"Exception details: {traceback.format_exc()}")
+        notify_and_log(f'Failed to create chat: {str(e)}', type='negative')
         return
-
-    reset_button.enable()
-    current_char = char
-
-    if char['avatar_file_name']:
-        avatar = 'https://characterai.io/i/80/static/avatars/' + char['avatar_file_name']
-    else:
-        avatar = 'https://characterai.io/i/80/static/topic-pics/cai-light-on-dark.jpg'
-
-    ui.notify(f'Selected <b>{char["participant__name"]}</b> as your character.', avatar=avatar, color='pink', html=True)
-    char_id = char['external_id']
-
-    # Save tgt and history_external_id
-    # to avoid making a lot of requests
-    global chat
-    chat = client.chat.get_chat(char_id)
-
-    participants = chat['participants']
-
-    # In the list of "participants",
-    # a character can be at zero or in the first place
-    if not participants[0]['is_human']:
-        tgt = participants[0]['user']['username']
-    else:
-        tgt = participants[1]['user']['username']
 
 
 async def set_token(token, overwrite=False):
     global client
 
-    client = PyCAI(token)
-    username = client.user.info()['user']['user']['username']
 
-    if username == 'ANONYMOUS':
-        ui.notify('An invalid token has been set!', type='negative')
-    else:
-        ui.notify(f'Welcome {username}!', type='positive', color='pink')
+    try:
+        client = await get_client(token=token)
+        me = await client.account.fetch_me()
+        username = me.username
+        
+        if username == 'ANONYMOUS':
+            ui.notify('An invalid token has been set!', type='negative')
+        else:
+            ui.notify(f'Welcome {username}!', type='positive', color='pink')
 
-        # Save correct token
-        if overwrite:
-            with open(settings_file, 'w') as f:
-                json.dump({'token': token}, f)
+            # Save correct token
+            if overwrite:
+                with open(settings_file, 'w') as f:
+                    json.dump({'token': token}, f)
 
-        await search(query_type='Trending')
+            await search(query_type='Trending')
+    except Exception as e:
+        ui.notify(f'Authentication failed: {str(e)}', type='negative')
+        client = None
 
 
 async def search(query_type='Search'):
@@ -238,35 +302,58 @@ async def search(query_type='Search'):
     search_btn.disable()
 
     try:
-        if query_type == 'Recommended':
-            response = await run.io_bound(client.character.recommended)
-            characters = response['recommended_characters']
-        elif query_type == 'Recent':
-            response = await run.io_bound(client.user.recent)
-            characters = response['characters']
-        elif query_type == 'Trending':
-            response = await run.io_bound(client.character.trending)
-            characters = response['trending_characters']
-        elif query_type == 'Search':
-            response = await run.io_bound(client.character.search, character_input.value)
-            characters = response['characters']
+        # Check if client is authenticated
+        if not client:
+            notify_and_log('Please set a C.AI token first!', type='negative')
+            return
 
+        # NEW search methods using proper async calls
+        if query_type == 'Recommended':
+            logger.debug("Fetching recommended characters")
+            characters = await client.character.fetch_recommended_characters()
+        elif query_type == 'Recent':
+            logger.debug("Fetching recent chats")
+            # Get recent chats and extract character info
+            recent_chats = await client.chat.fetch_recent_chats()
+            characters = []
+            for chat in recent_chats:
+                # Create a character-like object from chat info
+                char_obj = type('Character', (), {
+                    'character_id': chat.character_id,
+                    'name': chat.character_name,
+                    'title': '',
+                    'description': '',
+                    'num_interactions': 0,
+                    'avatar': chat.character_avatar if hasattr(chat, 'character_avatar') else None
+                })()
+                characters.append(char_obj)
+        elif query_type == 'Trending':
+            logger.debug("Fetching featured characters (trending)")
+            # Use featured characters as trending equivalent
+            characters = await client.character.fetch_featured_characters()
+        elif query_type == 'Search':
+            logger.debug(f"Searching for characters with query: {character_input.value}")
+            characters = await client.character.search_characters(character_input.value)
+        else:
+            characters = []
+
+        logger.debug(f"Retrieved {len(characters)} characters for query_type: {query_type}")
         results.clear()
 
         for character in characters:
-            name = character['participant__name']
-            if character['avatar_file_name']:
-                avatar = 'https://characterai.io/i/80/static/avatars/' + character['avatar_file_name']
+            name = character.name
+            if hasattr(character, 'avatar') and character.avatar:
+                avatar = character.avatar.get_url()
             else:
                 avatar = 'https://characterai.io/i/80/static/topic-pics/cai-light-on-dark.jpg'
 
             with results:
-                with ui.link().on('click', lambda char=character: select_character(char)).classes('no-underline hover:scale-105 duration-100 active:scale-100 text-pink-600'):
+                with ui.link().on('click', lambda char=character: select_character_sync(char)).classes('no-underline hover:scale-105 duration-100 active:scale-100 text-pink-600'):
                     with ui.card().tight().classes('w-36 h-48 text-center').classes('shadow-md shadow-black dark:bg-[#121212]'):
                         ui.image(avatar).classes('h-32')
                         with ui.row().classes('absolute right-2 top-1'):
-                            if 'participant__num_interactions' in character:
-                                interaction_label = f'🗨️{numerize.numerize(character["participant__num_interactions"])}'
+                            if hasattr(character, 'num_interactions') and character.num_interactions:
+                                interaction_label = f'🗨️{numerize.numerize(character.num_interactions)}'
                             else:
                                 interaction_label = ''
 
@@ -312,7 +399,7 @@ with ui.splitter(value=16).classes('w-full h-screen').props(':limits="[16, 32]"'
             toggle_active = ToggleButton(icon='power_settings_new').classes('w-11 animate-pulse')
             with toggle_active:
                 status_badge = ui.badge('OFF').props('floating').classes('bg-red rounded')
-            reset_button = ui.button(icon='restart_alt').classes('w-11 outline').on('click',lambda e: select_character(current_char))
+            reset_button = ui.button(icon='restart_alt').classes('w-11 outline').on('click', lambda e: select_character_sync(current_char))
             reset_button.disable()
 
             with reset_button:
@@ -372,4 +459,5 @@ check_if_admin()
 check_if_condebug()
 load_settings()
 
-ui.run(native=True, show=False, window_size=(840, 600), title='CS2 Chatbot', reload=False, show_welcome_message=False)
+print("Starting CS2-Chatbot with new PyCharacterAI library...")
+ui.run(native=True, show=True, window_size=(840, 600), title='CS2 Chatbot', reload=False, show_welcome_message=False)
