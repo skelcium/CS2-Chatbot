@@ -62,6 +62,7 @@ exe = EXE(
     a.datas,
     [],
     name='CS2-Chatbot',
+    icon='app.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
