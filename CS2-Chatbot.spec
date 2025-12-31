@@ -9,7 +9,7 @@ pywebview_data, pywebview_binaries, pywebview_hiddenimports = collect_all('pyweb
 pydirectinput_data, pydirectinput_binaries, pydirectinput_hiddenimports = collect_all('pydirectinput')
 pycharacterai_data, pycharacterai_binaries, pycharacterai_hiddenimports = collect_all('PyCharacterAI')
 
-datas = [('util.py', '.')]
+datas = [('.')]
 datas += nicegui_data
 datas += pywebview_data
 datas += pydirectinput_data
