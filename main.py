@@ -139,7 +139,7 @@ def is_condebug_in_game_args():
         logger.warning('Could not identify active Steam user (is Steam running?)')
         return False
 
-    cfg_path = steam_path + f"\\userdata\\{str(user_id)}\\config\\localconfig.vdf"
+    cfg_path = os.path.join(steam_path, 'userdata', str(user_id), 'config', 'localconfig.vdf')
     if not os.path.exists(cfg_path):
         logger.warning('Steam missing localconfig.vdf')
         return False
